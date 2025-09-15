@@ -12,7 +12,9 @@ const FIREBASE_CONFIG = {
 
 // Optional: restrict admin access by email list (client-side check; enforce using Firestore rules too)
 window.ADMIN_EMAILS = [
-"jerbrihsin@gmail.com"
+"jerbrihsin@gmail.com",
+"mdkalam26372@gmail.com",
 
 ];
+
 

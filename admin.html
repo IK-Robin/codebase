@@ -6,12 +6,16 @@
   <title>MiniCMS Pro+ — Admin</title>
   <link rel="stylesheet" href="styles.css"/>
 
+  <!-- Prism for highlighting (dark theme) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/plugins/autoloader/prism-autoloader.min.js"
+          data-autoloader-path="https://cdn.jsdelivr.net/npm/prismjs@1/components/"></script>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
-
-  <!-- Your Firebase keys -->
   <script src="config.js"></script>
 </head>
 <body>
@@ -29,12 +33,12 @@
   <!-- Not admin message -->
   <div id="not-admin" class="container hidden">
     <p class="muted">You must be an admin to access this page.</p>
-    <p class="muted">Tip: create <code>roles/{your-uid}</code> with <code>{ role: "admin" }</code> in Firestore.</p>
+    <p class="muted">Create <code>roles/{your-uid}</code> with <code>{ "role": "admin" }</code> in Firestore.</p>
   </div>
 
   <!-- App -->
   <div id="app" class="app hidden">
-    <!-- Sidebar: list + actions -->
+    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="brand"><span class="logo">◇</span><strong>MiniCMS Pro+</strong></div>
 
@@ -52,8 +56,7 @@
       <div class="side-footer">
         <button id="btn-export" class="btn ghost">Export</button>
         <label class="btn ghost">
-          <input type="file" id="file-import" accept="application/json" hidden/>
-          Import
+          <input type="file" id="file-import" accept="application/json" hidden/>Import
         </label>
       </div>
     </aside>
@@ -64,7 +67,7 @@
       <header class="topbar">
         <div class="meta">
           <input id="title" class="title" type="text" placeholder="Post title"/>
-          <input id="slug" class="slug" type="text" placeholder="Slug (used for /post/<slug>)"/>
+          <input id="slug" class="slug" type="text" placeholder="Slug (used for /post/&lt;slug&gt;)"/>
           <input id="tags" class="tags" type="text" placeholder="Tags (comma separated)"/>
         </div>
         <div class="top-actions">
@@ -77,11 +80,10 @@
         </div>
       </header>
 
-      <!-- Description -->
+      <!-- Description & editor -->
       <section class="editor" style="margin-top:-6px">
         <textarea id="description" rows="3" placeholder="Short description (optional)..." class="text-input"></textarea>
 
-        <!-- Blocks toolbar -->
         <div class="blocks-header" style="margin-top:6px">
           <span>Content Blocks</span>
           <div class="block-actions">
@@ -93,14 +95,26 @@
           </div>
         </div>
 
-        <!-- Blocks container -->
         <ul id="blocks" class="blocks"></ul>
       </section>
 
-      <!-- Live preview -->
+      <!-- Preview tabs -->
       <section class="preview">
-        <div class="preview-header"><span>Preview</span></div>
+        <div class="preview-header" style="display:flex;gap:8px;align-items:center">
+          <span>Preview</span>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button id="tab-rendered" class="btn tiny primary">Rendered</button>
+            <button id="tab-live" class="btn tiny ghost">Live Preview</button>
+          </div>
+        </div>
+
+        <!-- Rendered article -->
         <article id="preview-article" class="article"></article>
+
+        <!-- Live preview iframe -->
+        <div id="live-wrap" class="hidden" style="border:1px solid var(--border);border-radius:12px;overflow:hidden">
+          <iframe id="live-iframe" style="width:100%;height:420px;border:0;background:white"></iframe>
+        </div>
       </section>
     </main>
   </div>
@@ -131,7 +145,7 @@
         </div>
       </div>
       <div class="code-meta">
-        <input class="lang" type="text" placeholder="Language (e.g., js, py)"/>
+        <input class="lang" type="text" placeholder="Language (e.g., html, css, js, py, …)"/>
         <input class="caption" type="text" placeholder="Caption (optional)"/>
       </div>
       <textarea class="code-input" rows="8" placeholder="Paste code (rendered in <pre><code>)"></textarea>
@@ -193,7 +207,6 @@
     </li>
   </template>
 
-  <!-- Logic -->
   <script src="admin.js"></script>
 </body>
 </html>
