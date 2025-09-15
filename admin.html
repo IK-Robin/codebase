@@ -5,13 +5,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>MiniCMS Pro+ — Admin</title>
   <link rel="stylesheet" href="styles.css"/>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+
+  <!-- Your Firebase keys -->
   <script src="config.js"></script>
 </head>
 <body>
+  <!-- Top bar -->
   <div class="nav container">
     <div><strong>MiniCMS Pro+</strong> — Admin</div>
     <div class="auth">
@@ -22,34 +26,49 @@
     </div>
   </div>
 
+  <!-- Not admin message -->
   <div id="not-admin" class="container hidden">
     <p class="muted">You must be an admin to access this page.</p>
+    <p class="muted">Tip: create <code>roles/{your-uid}</code> with <code>{ role: "admin" }</code> in Firestore.</p>
   </div>
 
+  <!-- App -->
   <div id="app" class="app hidden">
+    <!-- Sidebar: list + actions -->
     <aside class="sidebar">
       <div class="brand"><span class="logo">◇</span><strong>MiniCMS Pro+</strong></div>
+
       <div class="side-actions">
         <button id="btn-new" class="btn primary">+ New Post</button>
         <button id="btn-delete" class="btn danger">Delete</button>
       </div>
-      <div class="side-search"><input id="post-search" type="text" placeholder="Search posts..."/></div>
+
+      <div class="side-search">
+        <input id="post-search" type="text" placeholder="Search posts by title/tags..."/>
+      </div>
+
       <ul id="post-list" class="list"></ul>
+
       <div class="side-footer">
         <button id="btn-export" class="btn ghost">Export</button>
-        <label class="btn ghost"><input type="file" id="file-import" accept="application/json" hidden/>Import</label>
+        <label class="btn ghost">
+          <input type="file" id="file-import" accept="application/json" hidden/>
+          Import
+        </label>
       </div>
     </aside>
 
+    <!-- Main editor + preview -->
     <main class="main">
+      <!-- Header meta -->
       <header class="topbar">
         <div class="meta">
           <input id="title" class="title" type="text" placeholder="Post title"/>
-          <input id="slug" class="slug" type="text" placeholder="Slug"/>
+          <input id="slug" class="slug" type="text" placeholder="Slug (used for /post/<slug>)"/>
           <input id="tags" class="tags" type="text" placeholder="Tags (comma separated)"/>
         </div>
         <div class="top-actions">
-          <select id="status">
+          <select id="status" title="Publish status">
             <option value="draft">Draft</option>
             <option value="published">Published</option>
           </select>
@@ -58,8 +77,12 @@
         </div>
       </header>
 
-      <section class="editor">
-        <div class="blocks-header">
+      <!-- Description -->
+      <section class="editor" style="margin-top:-6px">
+        <textarea id="description" rows="3" placeholder="Short description (optional)..." class="text-input"></textarea>
+
+        <!-- Blocks toolbar -->
+        <div class="blocks-header" style="margin-top:6px">
           <span>Content Blocks</span>
           <div class="block-actions">
             <button id="add-text" class="btn ghost">+ Text</button>
@@ -69,9 +92,12 @@
             <button id="add-divider" class="btn ghost">+ Divider</button>
           </div>
         </div>
+
+        <!-- Blocks container -->
         <ul id="blocks" class="blocks"></ul>
       </section>
 
+      <!-- Live preview -->
       <section class="preview">
         <div class="preview-header"><span>Preview</span></div>
         <article id="preview-article" class="article"></article>
@@ -79,6 +105,7 @@
     </main>
   </div>
 
+  <!-- Block templates -->
   <template id="tpl-block-text">
     <li class="block" data-type="text">
       <div class="block-bar">
@@ -166,6 +193,7 @@
     </li>
   </template>
 
+  <!-- Logic -->
   <script src="admin.js"></script>
 </body>
 </html>
