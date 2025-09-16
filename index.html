@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>MiniCMS Pro+ — Frontend</title>
+  <title>Robin Codebase</title>
   <link rel="stylesheet" href="styles.css"/>
 
   <!-- Prism for code highlighting -->
@@ -22,11 +22,15 @@
 <body>
   <!-- Top nav -->
   <nav class="nav container">
-    <div><strong>MiniCMS Pro+</strong> — Published Posts</div>
+    <div><strong>Robin Codebase</strong></div>
 
-    <div class="filters">
-      <span class="muted">Filter by tag:</span>
-      <div id="tag-row" class="filters"></div>
+    <!-- Search -->
+    <div class="filters" style="gap:8px;flex-wrap:wrap">
+      <input id="search" type="search" placeholder="Search title, tags, content…" style="min-width:240px"/>
+      <div class="filters">
+        <span class="muted">Filter by tag:</span>
+        <div id="tag-row" class="filters"></div>
+      </div>
     </div>
 
     <div class="auth">
@@ -60,13 +64,15 @@
   <template id="card-template">
     <div class="card">
       <div class="title"></div>
-      <div class="muted"></div>
+      <div class="muted subtitle"></div>
       <div class="actions">
         <button class="btn ghost open">Open</button>
         <button class="btn ghost copy-link">Copy Link</button>
       </div>
     </div>
   </template>
+  <button id="back-to-top" class="btn primary">↑ Top</button>
+
 
   <script src="frontend.js"></script>
 </body>

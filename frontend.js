@@ -1,9 +1,4 @@
-// MiniCMS Pro+ Frontend
-// - Google auth required to read
-// - Tag filters, Prism highlighting
-// - Slug permalinks, copy link
-// - Live Preview (HTML/CSS/JS)
-
+// MiniCMS Pro+ Frontend (with search + tag filters + live preview + Prism)
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db   = firebase.firestore();
@@ -11,6 +6,7 @@ const db   = firebase.firestore();
 const grid      = document.getElementById('posts-grid');
 const view      = document.getElementById('post-view');
 const tagRow    = document.getElementById('tag-row');
+const searchEl  = document.getElementById('search');
 const btnLogin  = document.getElementById('btn-login');
 const btnLogout = document.getElementById('btn-logout');
 const userEmail = document.getElementById('user-email');
@@ -24,9 +20,30 @@ const liveFrame   = document.getElementById('front-iframe');
 
 let allPosts = [];
 let activeTag = null;
-let openedPost = null;
+let query = '';
 
 const provider = new firebase.auth.GoogleAuthProvider();
+
+// ---------------- utilities
+function debounce(fn, ms=250){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+function escapeHtml(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function normalize(s){ return (s||'').toString().toLowerCase(); }
+
+// build a searchable string for a post (title, desc, tags, block text/code)
+function buildSearchText(p){
+  const parts = [];
+  parts.push(p.title || '', p.description || '');
+  (p.tags||[]).forEach(t => parts.push(t));
+  (p.blocks||[]).forEach(b=>{
+    if(b.type==='text') parts.push(b.text||'');
+    if(b.type==='quote') parts.push(b.text||'', b.cite||'');
+    if(b.type==='list') parts.push(b.items||'');
+    if(b.type==='code') parts.push(b.lang||'', b.caption||'', b.code||'');
+  });
+  return normalize(parts.join(' \n '));
+}
+
+// ---------------- auth
 btnLogin.onclick  = async () => {
   try { provider.setCustomParameters({prompt:'select_account'}); await auth.signInWithPopup(provider); }
   catch(e){ alert(`Google sign-in failed: ${e.code}\n${e.message}`); }
@@ -53,10 +70,7 @@ auth.onAuthStateChanged(async (user)=>{
   }
 });
 
-// ---------------- helpers
-function escapeHtml(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
-
-// Build runnable HTML from HTML/CSS/JS code blocks
+// ---------------- live preview helpers
 function buildSandboxHTML(blocks){
   let html='', css='', js='';
   (blocks||[]).forEach(b=>{
@@ -69,31 +83,24 @@ function buildSandboxHTML(blocks){
   if(!(html||css||js)) return null;
   return `<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body>
 ${html}
-<script>
-try{${js}}catch(e){document.body.insertAdjacentHTML('beforeend','<pre style="color:red">'+e+'</pre>');}
-<\/script></body></html>`;
+<script>try{${js}}catch(e){document.body.insertAdjacentHTML('beforeend','<pre style="color:red">'+e+'</pre>');}<\/script>
+</body></html>`;
 }
-
 function showLive(blocks){
   const src = buildSandboxHTML(blocks);
-  if(!src){
-    liveFrame.srcdoc = '<!doctype html><html><body><pre>No HTML/CSS/JS code blocks to run.</pre></body></html>';
-  } else {
-    liveFrame.srcdoc = src;
-  }
+  liveFrame.srcdoc = src || '<!doctype html><html><body><pre>No HTML/CSS/JS code blocks to run.</pre></body></html>';
   liveWrap.classList.remove('hidden');
   view.classList.add('hidden');
 }
-
 function hideLive(){
   liveWrap.classList.add('hidden');
   view.classList.remove('hidden');
 }
 
-// ---------------- data load + UI
+// ---------------- data + UI
 async function loadPublished(){
   grid.innerHTML = '<div class="muted">Loading…</div>';
-  // Sort in JS (no composite index required)
+  // safe: read published only, sort client-side (no composite index needed)
   const snap = await db.collection('posts').where('status','==','published').get();
   allPosts = snap.docs.map(d=>({id:d.id, ...d.data()}));
   allPosts.sort((a,b)=> String(b.updated||'').localeCompare(String(a.updated||'')) );
@@ -101,7 +108,7 @@ async function loadPublished(){
   renderTags();
   renderList();
 
-  // Handle permalinks (?slug=) or #/post/<slug>
+  // handle permalinks (?slug= or #/post/<slug>)
   const u = new URL(location.href);
   const slugQ = u.searchParams.get('slug');
   const hash = location.hash;
@@ -135,6 +142,12 @@ function renderTags(){
   });
 }
 
+// Debounced search input
+searchEl.addEventListener('input', debounce(()=>{
+  query = normalize(searchEl.value);
+  renderList();
+}, 200));
+
 function renderList(){
   grid.classList.remove('hidden');
   view.classList.add('hidden');
@@ -142,15 +155,29 @@ function renderList(){
   liveWrap.classList.add('hidden');
 
   grid.innerHTML = '';
-  const list = allPosts.filter(p => !activeTag || (p.tags||[]).includes(activeTag));
+
+  const list = allPosts.filter(p=>{
+    const tagOk = !activeTag || (p.tags||[]).includes(activeTag);
+    if(!tagOk) return false;
+    if(!query) return true;
+
+    const text = buildSearchText(p);
+    return text.includes(query);
+  });
+
   if(!list.length){
-    grid.innerHTML = '<div class="muted">No posts match this filter.</div>';
+    grid.innerHTML = '<div class="muted">No posts match your search or filters.</div>';
     return;
   }
+
   list.forEach(d=>{
     const card = document.getElementById('card-template').content.cloneNode(true);
     card.querySelector('.title').textContent = d.title || 'Untitled';
-    card.querySelector('.muted').textContent = (d.tags||[]).join(', ');
+    const subtitle = [];
+    if (d.description) subtitle.push(d.description);
+    if ((d.tags||[]).length) subtitle.push((d.tags||[]).join(', '));
+    card.querySelector('.subtitle').textContent = subtitle.join(' • ');
+
     card.querySelector('.open').onclick = ()=> openPost(d.id, d);
     card.querySelector('.copy-link').onclick = ()=> {
       const url = `${location.origin}${location.pathname}?slug=${encodeURIComponent(d.slug||'')}`;
@@ -161,7 +188,6 @@ function renderList(){
 }
 
 function openPost(id, d){
-  openedPost = d;
   grid.classList.add('hidden');
   view.classList.remove('hidden');
   postActions.classList.remove('hidden');
@@ -182,7 +208,7 @@ function openPost(id, d){
   };
 
   renderArticle(view, d);
-  // update URL (permamlink)
+  // update URL (permalink)
   history.replaceState(null, '', `?slug=${encodeURIComponent(d.slug||'')}`);
 }
 
@@ -196,42 +222,30 @@ function renderArticle(root, data){
       const p = document.createElement('p');
       p.innerHTML = escapeHtml(b.text||'').replace(/\n/g,'<br/>');
       root.append(p);
-    } 
-    
-    
-  else if (b.type === 'code') {
-  const wrap = document.createElement('details');
-  wrap.open = true;
+    } else if(b.type==='code'){
+      // Foldable code block + copy
+      const wrap = document.createElement('details'); wrap.open = true;
+      const sum  = document.createElement('summary');
+      sum.textContent = b.caption || (b.lang ? `${b.lang.toUpperCase()} code` : 'Code block');
 
-  const sum = document.createElement('summary');
-  sum.textContent = b.caption || (b.lang ? `${b.lang.toUpperCase()} code` : 'Code block');
-  sum.style.cursor = 'pointer';
+      const pre  = document.createElement('pre');
+      const code = document.createElement('code');
+      code.className = b.lang ? `language-${b.lang.toLowerCase()}` : '';
+      code.textContent = b.code || '';
 
-  const pre = document.createElement('pre');
-  const code = document.createElement('code');
-  code.className = b.lang ? `language-${b.lang.toLowerCase()}` : '';
-  code.textContent = b.code || '';
+      const copy = document.createElement('button');
+      copy.className = 'btn tiny ghost';
+      copy.style.marginLeft = '8px';
+      copy.textContent = 'Copy';
+      copy.onclick = ()=>{ navigator.clipboard.writeText(b.code || ''); copy.textContent='Copied!'; setTimeout(()=>copy.textContent='Copy',1200); };
 
-  const copy = document.createElement('button');
-  copy.textContent = 'Copy';
-  copy.className = 'btn tiny ghost';
-  copy.style.marginLeft = '8px';
-  copy.onclick = () => {
-    navigator.clipboard.writeText(b.code || '');
-    copy.textContent = 'Copied!';
-    setTimeout(() => (copy.textContent = 'Copy'), 1500);
-  };
-
-  wrap.append(sum, copy, pre);
-  pre.append(code);
-  root.append(wrap);
-}
-else if(b.type==='divider'){
+      pre.append(code); wrap.append(sum, copy, pre); root.append(wrap);
+    } else if(b.type==='divider'){
       root.append(document.createElement('hr'));
     } else if(b.type==='quote'){
       const q = document.createElement('blockquote');
       q.innerHTML = escapeHtml(b.text||'').replace(/\n/g,'<br/>');
-      if(b.cite){ const cite=document.createElement('div'); cite.className='muted'; cite.textContent='— '+b.cite; q.append(document.createElement('br')); q.append(cite); }
+      if(b.cite){ const c=document.createElement('div'); c.className='muted'; c.textContent='— '+b.cite; q.append(document.createElement('br')); q.append(c); }
       root.append(q);
     } else if(b.type==='list'){
       const items=(b.items||'').split(/\r?\n/).filter(Boolean);
@@ -242,6 +256,20 @@ else if(b.type==='divider'){
   });
 
   if(window.Prism){ Prism.highlightAllUnder(root); }  // syntax highlight
-  // show article, hide live if it was open
   hideLive();
 }
+const backToTopBtn = document.getElementById('back-to-top');
+
+// show button after scrolling down 200px
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 200) {
+    backToTopBtn.style.display = 'block';
+  } else {
+    backToTopBtn.style.display = 'none';
+  }
+});
+
+// smooth scroll to top
+backToTopBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});

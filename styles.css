@@ -8,16 +8,66 @@
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto}
 a{color:var(--primary);text-decoration:none}
+.container{max-width:1120px;margin:0 auto;padding:16px}
+
+/* Buttons */
 .btn{border:1px solid var(--border);background:transparent;color:inherit;padding:8px 10px;border-radius:10px;cursor:pointer}
 .btn.primary{background:var(--primary);border-color:transparent;color:white}
 .btn.secondary{background:var(--secondary);border-color:transparent;color:black}
 .btn.danger{background:var(--danger);border-color:transparent;color:white}
 .btn.ghost{background:transparent}
 .btn.tiny{font-size:12px;padding:4px 8px}
-input,textarea,select{border:1px solid var(--border);background:var(--panel-2);color:inherit;border-radius:10px;padding:10px}
+
+/* Inputs */
+input,textarea,select{
+  border:1px solid var(--border);
+  background:var(--panel-2);
+  color:inherit;border-radius:10px;padding:10px;
+}
 textarea{resize:vertical}
+
+/* Prevent long content from breaking layouts (CORE FIXES) */
+.app,.main,.editor,.preview,.post,.article,.sidebar,.blocks,.block,.block-body,.topbar,.nav,.grid{
+  min-width:0;           /* let children shrink in flex/grid */
+  max-width:100%;        /* never exceed container */
+}
+.text-input,.code-input,.quote-input,.list-input{
+  width:100%;
+  max-width:100%;
+  border:0;border-top:1px dashed var(--border);
+  background:transparent;padding:10px;outline:none;
+}
+textarea,
+.text-input,
+.code-input{
+  white-space:pre-wrap;      /* wrap long lines */
+  word-break:break-word;     /* allow breaking long tokens */
+  overflow-wrap:anywhere;    /* force break anywhere if needed */
+  overflow-x:auto;           /* if still too long, scroll inside */
+}
+
+/* Code blocks (preview/frontend) */
+pre{
+  max-width:100%;
+  box-sizing:border-box;
+  overflow-x:auto;           /* horizontal scroll if needed */
+  overflow-y:hidden;
+  white-space:pre;           /* keep code formatting (no wrap) */
+}
+code{
+  display:block;
+  max-width:100%;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  font-size:12.5px;
+}
+
+/* Prism container in article */
+.article pre{
+  background:#0b0e13;border:1px solid var(--border);border-radius:10px;padding:12px;tab-size:2;
+}
+
+/* Text */
 .muted{color:var(--muted)}
-.container{max-width:1120px;margin:0 auto;padding:16px}
 
 /* Admin layout */
 .app{display:grid;grid-template-columns:300px 1fr;min-height:100vh}
@@ -26,14 +76,14 @@ textarea{resize:vertical}
 .side-actions{display:flex;gap:8px;flex-wrap:wrap}
 .side-search input{width:100%}
 .list{list-style:none;margin:0;padding:0;overflow:auto;flex:1;border:1px dashed var(--border);border-radius:12px}
-.list li{padding:10px;border-bottom:1px dashed var(--border);cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.list li{padding:10px;border-bottom:1px dashed var(--border);cursor:pointer;display:flex;justify-content:space-between;gap:8px;min-width:0}
 .list li:hover{background:rgba(255,255,255,.03)}
-.list .title{font-weight:600}
+.list .title{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .list .time{font-size:12px;color:var(--muted)}
 
 .main{display:grid;grid-template-rows:auto auto 1fr;gap:12px;padding:12px}
 .topbar{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow)}
-.topbar .meta{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;align-items:center}
+.topbar .meta{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;align-items:center;min-width:0}
 .title{font-size:16px}
 .slug,.tags{font-size:13px}
 .top-actions{display:flex;gap:8px;align-items:center}
@@ -42,18 +92,17 @@ textarea{resize:vertical}
 .blocks-header{display:flex;justify-content:space-between;align-items:center}
 .blocks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .block{border:1px solid var(--border);border-radius:12px;background:var(--panel-2);overflow:hidden}
-.block-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)}
+.block-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03);cursor:pointer}
+.block-body{padding:0 0 8px 0}
 .code-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
-.text-input,.code-input,.quote-input,.list-input{width:100%;border:0;border-top:1px dashed var(--border);background:transparent;padding:10px;outline:none}
 .code-tools{display:flex;gap:8px;padding:8px 10px;border-top:1px dashed var(--border)}
 
+/* Preview area */
 .preview{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow)}
 .preview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.article{display:flex;flex-direction:column;gap:14px}
+.article{display:flex;flex-direction:column;gap:14px;min-width:0}
 .article h1{margin:0}
 .article .desc{color:var(--muted)}
-.article pre{background:#0b0e13;border:1px solid var(--border);border-radius:10px;padding:12px;overflow:auto;white-space:pre;tab-size:2}
-.article code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12.5px}
 .article blockquote{border-left:3px solid var(--primary);margin:0;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:8px}
 .article hr{border:0;border-top:1px dashed var(--border)}
 
@@ -61,7 +110,7 @@ textarea{resize:vertical}
 .nav{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--border);background:var(--panel);position:sticky;top:0;z-index:5}
 .filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(260px,1fr));gap:12px}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card .muted{font-size:12px}
 .post{max-width:820px;margin:16px auto 24px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
 .codebar{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
@@ -73,3 +122,39 @@ textarea{resize:vertical}
 
 .tag{border:1px solid var(--border);padding:4px 8px;border-radius:999px;cursor:pointer}
 .tag.active{background:var(--primary);border-color:transparent;color:#fff}
+
+/* <details> summary focus style for foldable code in frontend/admin preview */
+details > summary{
+  list-style:none;
+}
+details > summary::-webkit-details-marker{ display:none; }
+details > summary{ cursor:pointer; user-select:none; }
+
+/* Make iframes responsive container-safe */
+#live-iframe, #front-iframe{
+  display:block;
+  width:100%;
+  max-width:100%;
+}
+
+/* Small screens */
+@media (max-width: 900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{order:2}
+  .main{order:1}
+  .topbar .meta{grid-template-columns:1fr}
+}
+#back-to-top {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	z-index: 999;
+	display: none;
+	/* padding: 10px 14px; */
+	border-radius: 52%;
+	font-size: 14px;
+	box-shadow: var(--shadow);
+	width: 60px;
+	height: 60px;
+	text-align: center;
+}
